@@ -6,12 +6,21 @@ from scrfd import SCRFD
 import argparse
 import numpy as np
 import mediapipe
+from PIL import Image
+import math
+def euclidean_distance(a, b):
+    x1 = a[0]; y1 = a[1]
+    x2 = b[0]; y2 = b[1]
+    return math.sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)))
 
-# detection using opencv, note that opencv can only detect eye coordinator and the egde of the face, thus general normalizatio of the face is not possible
-def det_cv2(img):
+# detection using opencv, note that opencv can only detect eye coordinator and the egde of the face, thus general normalize of the face is not possible
+# hense, the only align method for opencv is rotation, though other methods are applicable, but it does not make sense(you have to detect the face using other methods)
+def det_cv2(img,align = True):
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    eye_detector = cv2.CascadeClassifier("haarcascade_eye.xml")
+    eye_detector = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_eye.xml")
+    rimg = cv2.imread(img)
     img = cv2.imread(img)
+    
     # Convert into grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # Detect faces
@@ -24,7 +33,59 @@ def det_cv2(img):
         ret_faces.append(cropped)
         
         # cv2.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
-    # Display the output
+    #then make alignment for each face, since the posture of the faces may be different
+    if(align):
+        for i in range(len(ret_faces)):
+            img = ret_faces[i]
+            gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            eyes = eye_detector.detectMultiScale(gray_img)
+ 
+            index = 0
+            for (eye_x, eye_y, eye_w, eye_h) in eyes:
+                if index == 0:
+                    eye_1 = (eye_x, eye_y, eye_w, eye_h)
+                elif index == 1:
+                    eye_2 = (eye_x, eye_y, eye_w, eye_h)
+                index = index + 1
+            if(eye_1[0] < eye_2[0]):
+                left_eye = eye_1
+                right_eye = eye_2
+            else:
+                left_eye = eye_2
+                right_eye = eye_1
+            #caluate the center of the eyes
+            left_eye_center = (int(left_eye[0] + (left_eye[2] / 2)), int(left_eye[1] + (left_eye[3] / 2)))
+            left_eye_x = left_eye_center[0]; left_eye_y = left_eye_center[1]
+            right_eye_center = (int(right_eye[0] + (right_eye[2]/2)), int(right_eye[1] + (right_eye[3]/2)))
+            right_eye_x = right_eye_center[0]; right_eye_y = right_eye_center[1]
+            if left_eye_y > right_eye_y:
+                point_3rd = (right_eye_x, left_eye_y)
+                direction = -1 #rotate same direction to clock
+                # print("rotate to clock direction")
+            else:
+                point_3rd = (left_eye_x, right_eye_y)
+                direction = 1 #rotate inverse direction of clock
+                # print("rotate to inverse clock direction")
+            # cv2.circle(img, point_3rd, 2, (255, 0, 0) , 2)
+ 
+            # cv2.line(img,right_eye_center, left_eye_center,(67,67,67),2)
+            # cv2.line(img,left_eye_center, point_3rd,(67,67,67),2)
+            # cv2.line(img,right_eye_center, point_3rd,(67,67,67),2)
+            
+            a = euclidean_distance(left_eye_center, point_3rd)
+            b = euclidean_distance(right_eye_center, left_eye_center)
+            c = euclidean_distance(right_eye_center, point_3rd)
+            cos_a = (b*b + c*c - a*a)/(2*b*c)
+            angle = np.arccos(cos_a)
+            angle = (angle * 180) / math.pi
+            if direction == -1:
+                angle = 90 - angle
+            new_img = Image.fromarray(img)
+            new_img = np.array(new_img.rotate(direction * angle))
+            ret_faces[i] = new_img
+    cv2.imshow('img',ret_faces[0])
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
     return ret_faces
    
 
@@ -39,13 +100,6 @@ def det_retina(img):
 
 #detect using scrfd, implemented in opencv, thanks to https://github.com/hpc203/scrfd-opencv
 def det_scrfd(img,model='./src/scrfd_weights/scrfd_500m_kps.onnx',confThreshold=0.5,nmsThreshold=0.5):
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('--imgpath', type=str, default='s_l.jpg', help='image path')
-    # parser.add_argument('--onnxmodel', default='weights/scrfd_500m_kps.onnx', type=str, choices=['weights/scrfd_500m_kps.onnx', 'weights/scrfd_2.5g_kps.onnx', 'weights/scrfd_10g_kps.onnx'], help='onnx model')
-    # parser.add_argument('--confThreshold', default=0.5, type=float, help='class confidence')
-    # parser.add_argument('--nmsThreshold', default=0.5, type=float, help='nms iou thresh')
-    # args = parser.parse_args()
-
     mynet = SCRFD(model, confThreshold, nmsThreshold)
     srcimg = cv2.imread(img)
     faces = mynet.detect(srcimg)
