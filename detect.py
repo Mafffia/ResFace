@@ -8,10 +8,7 @@ import numpy as np
 import mediapipe
 from PIL import Image
 import math
-def euclidean_distance(a, b):
-    x1 = a[0]; y1 = a[1]
-    x2 = b[0]; y2 = b[1]
-    return math.sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)))
+from align import align as alignment
 
 # detection using opencv, note that opencv can only detect eye coordinator and the egde of the face, thus general normalize of the face is not possible
 # hense, the only align method for opencv is rotation, though other methods are applicable, but it does not make sense(you have to detect the face using other methods)
@@ -58,31 +55,34 @@ def det_cv2(img,align = True):
             left_eye_x = left_eye_center[0]; left_eye_y = left_eye_center[1]
             right_eye_center = (int(right_eye[0] + (right_eye[2]/2)), int(right_eye[1] + (right_eye[3]/2)))
             right_eye_x = right_eye_center[0]; right_eye_y = right_eye_center[1]
-            if left_eye_y > right_eye_y:
-                point_3rd = (right_eye_x, left_eye_y)
-                direction = -1 #rotate same direction to clock
-                # print("rotate to clock direction")
-            else:
-                point_3rd = (left_eye_x, right_eye_y)
-                direction = 1 #rotate inverse direction of clock
-                # print("rotate to inverse clock direction")
-            # cv2.circle(img, point_3rd, 2, (255, 0, 0) , 2)
+            landmark = {}
+            landmark["left_eye"] = [left_eye_x,left_eye_y]
+            landmark["right_eye"] = [right_eye_x,right_eye_y]
+            # if left_eye_y > right_eye_y:
+            #     point_3rd = (right_eye_x, left_eye_y)
+            #     direction = -1 #rotate same direction to clock
+            #     # print("rotate to clock direction")
+            # else:
+            #     point_3rd = (left_eye_x, right_eye_y)
+            #     direction = 1 #rotate inverse direction of clock
+            #     # print("rotate to inverse clock direction")
+            # # cv2.circle(img, point_3rd, 2, (255, 0, 0) , 2)
  
-            # cv2.line(img,right_eye_center, left_eye_center,(67,67,67),2)
-            # cv2.line(img,left_eye_center, point_3rd,(67,67,67),2)
-            # cv2.line(img,right_eye_center, point_3rd,(67,67,67),2)
+            # # cv2.line(img,right_eye_center, left_eye_center,(67,67,67),2)
+            # # cv2.line(img,left_eye_center, point_3rd,(67,67,67),2)
+            # # cv2.line(img,right_eye_center, point_3rd,(67,67,67),2)
             
-            a = euclidean_distance(left_eye_center, point_3rd)
-            b = euclidean_distance(right_eye_center, left_eye_center)
-            c = euclidean_distance(right_eye_center, point_3rd)
-            cos_a = (b*b + c*c - a*a)/(2*b*c)
-            angle = np.arccos(cos_a)
-            angle = (angle * 180) / math.pi
-            if direction == -1:
-                angle = 90 - angle
-            new_img = Image.fromarray(img)
-            new_img = np.array(new_img.rotate(direction * angle))
-            ret_faces[i] = new_img
+            # a = euclidean_distance(left_eye_center, point_3rd)
+            # b = euclidean_distance(right_eye_center, left_eye_center)
+            # c = euclidean_distance(right_eye_center, point_3rd)
+            # cos_a = (b*b + c*c - a*a)/(2*b*c)
+            # angle = np.arccos(cos_a)
+            # angle = (angle * 180) / math.pi
+            # if direction == -1:
+            #     angle = 90 - angle
+            # new_img = Image.fromarray(img)
+            # new_img = np.array(new_img.rotate(direction * angle))
+            ret_faces[i] = alignment(img,method='rotate',landmarks=landmark)
     cv2.imshow('img',ret_faces[0])
     cv2.waitKey(0)
     cv2.destroyAllWindows()
@@ -99,10 +99,13 @@ def det_retina(img):
     return faces
 
 #detect using scrfd, implemented in opencv, thanks to https://github.com/hpc203/scrfd-opencv
-def det_scrfd(img,model='./src/scrfd_weights/scrfd_500m_kps.onnx',confThreshold=0.5,nmsThreshold=0.5):
+def det_scrfd(img,model='./src/scrfd_weights/scrfd_500m_kps.onnx',confThreshold=0.5,nmsThreshold=0.5,align=True):
     mynet = SCRFD(model, confThreshold, nmsThreshold)
     srcimg = cv2.imread(img)
-    faces = mynet.detect(srcimg)
+    faces = mynet.detect(srcimg,align)
+    cv2.imshow('img',faces[0])
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
     return faces
 
 def det_mediapipe(img,min_detection_confidence=0.6):

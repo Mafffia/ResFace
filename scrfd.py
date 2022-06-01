@@ -53,7 +53,8 @@ class SCRFD():
             preds.append(px)
             preds.append(py)
         return np.stack(preds, axis=-1)
-    def detect(self, srcimg):
+    #add align parameter
+    def detect(self, srcimg,align):
         img, newh, neww, padh, padw = self.resize_image(srcimg)
         blob = cv2.dnn.blobFromImage(img, 1.0 / 128, (self.inpWidth, self.inpHeight), (127.5, 127.5, 127.5), swapRB=True)
         # Sets the input to the network
@@ -109,9 +110,9 @@ class SCRFD():
             # cv2.rectangle(srcimg, (xmin, ymin), (xmax, ymax), (0, 0, 255), thickness=2)
             cropped = srcimg[ymin:ymax,xmin:xmax]
             ret_faces.append(cropped)
-            # for j in range(5):
-                # cv2.circle(srcimg, (int(kpss[i, j, 0]), int(kpss[i, j, 1])), 1, (0,255,0), thickness=-1)
-            # cv2.putText(srcimg, str(round(scores[i], 3)), (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), thickness=1)
+            for j in range(5):
+                cv2.circle(srcimg, (int(kpss[i, j, 0]), int(kpss[i, j, 1])), 1, (0,255,0), thickness=-1)
+            cv2.putText(srcimg, str(round(scores[i], 3)), (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), thickness=1)
         return ret_faces
 
 if __name__ == '__main__':
