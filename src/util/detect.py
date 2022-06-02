@@ -2,13 +2,18 @@
 #Methods to add:SCRFD, RetinaFace, opencv, yolo5face
 import cv2
 from retinaface import RetinaFace
-from scrfd import SCRFD
+from util.scrfd import SCRFD
 import argparse
 import numpy as np
 import mediapipe
 from PIL import Image
 import math
-from align import align as alignment
+from util.align import align as alignment
+
+
+#to-do: make format output of landmarks, in order to make it easy for alignment
+
+
 
 # detection using opencv, note that opencv can only detect eye coordinator and the egde of the face, thus general normalize of the face is not possible
 # hense, the only align method for opencv is rotation, though other methods are applicable, but it does not make sense(you have to detect the face using other methods)
