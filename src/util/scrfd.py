@@ -104,6 +104,8 @@ class SCRFD():
         indices = cv2.dnn.NMSBoxes(bboxes.tolist(), scores.tolist(), self.confThreshold, self.nmsThreshold)
 
         ret_faces = []
+        
+        #why cropped already appended while landmarks has been identified   n
         for i in indices:
             # i = i[0]
             xmin, ymin, xmax, ymax = int(bboxes[i, 0]), int(bboxes[i, 1]), int(bboxes[i, 0] + bboxes[i, 2]), int(bboxes[i, 1] + bboxes[i, 3])

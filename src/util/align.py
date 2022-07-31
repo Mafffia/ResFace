@@ -50,7 +50,7 @@ def align_rotate(img,landmarks):
 
 
 
-
+# for affline alignment, five landmarks is needed: left eye, right eye, nose, mouse left, mouse right
 def align(img,method = 'rotate',landmarks=None):
     left_eye = landmarks["left_eye"]
     right_eye = landmarks["right_eye"]
