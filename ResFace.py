@@ -1,10 +1,7 @@
 #import of different pipelines
-from deepface import DeepFace
-
+from src.util.detect import detect
 #first step - detect
 """
 Methods to add:SCRFD, RetinaFace, opencv, MediaPipe
 """
 
-def detect(img):
-    DeepFace.detect

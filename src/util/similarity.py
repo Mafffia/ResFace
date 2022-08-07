@@ -113,6 +113,6 @@ def get_face_align(img_file):
     """
     
     # landmark = detect_landmark(img, detector)
-    landmark = mediapipe_landmarks(img)[0]
+    landmark = scrfd_landmarks(img)[0]
     wrap = norm_crop(img, np.array(landmark), image_size=112, mode='arcface')
     return wrap

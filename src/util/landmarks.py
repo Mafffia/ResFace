@@ -71,7 +71,7 @@ faces = [{'bbox': array([ 85.47469,  76.81839, 165.40952, 190.46407], dtype=floa
 """
 def scrfd_landmarks(img,model='./src/scrfd_weights/scrfd_500m_kps.onnx'):
     app = FaceAnalysis(allowed_modules=['detection']) 
-    app.prepare(ctx_id=0, det_size=(640, 640))  
+    app.prepare(ctx_id=0, det_size=(240, 24))
     scrimg = img
     if(type(scrimg) == str):
         scrimg = cv2.imread(img)
